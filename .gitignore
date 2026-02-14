@@ -1,0 +1,25 @@
+# IntelliJ
+.idea/
+*.iml
+out/
+
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Logs
+*.log
+
+# Mac
+.DS_Store
+
+# H2
+*.mv.db
+*.trace.db
+
+# Local configs
+application-local.yml
+application-dev.yml
+application-prod.yml
+.env

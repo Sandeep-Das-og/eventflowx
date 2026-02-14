@@ -1,0 +1,8 @@
+rootProject.name = 'eventflowx'
+
+include 'common'
+
+include 'services:api-gateway'
+include 'services:booking-service'
+include 'services:wallet-service'
+include 'services:event-service'
