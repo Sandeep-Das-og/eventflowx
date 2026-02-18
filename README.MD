@@ -1,6 +1,6 @@
 # EventFlowX Microservice Example
 
-A Spring Boot multi-module microservices project demonstrating:
+A Spring Boot multi-module microservices project demonstrating :
 - Domain + persistence layering
 - Transactional outbox pattern
 - RabbitMQ async messaging
