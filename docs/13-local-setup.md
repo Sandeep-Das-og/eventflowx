@@ -67,7 +67,7 @@ ng serve
 
 ## 8. Run E2E Tests
 
-newman run tests/newman/collection.json
+newman run tests/newman/EventFlowX.postman_collection.json -e tests/newman/local.postman_environment.json
 
 robot tests/robot/
 

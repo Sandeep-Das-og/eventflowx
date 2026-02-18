@@ -1,0 +1,63 @@
+{
+  "realm": "eventflowx",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      { "name": "user" },
+      { "name": "admin" }
+    ]
+  },
+  "users": [
+    {
+      "username": "eventflowx-user",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "EventFlowX",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "eventflowx-pass",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    },
+    {
+      "username": "eventflowx-admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "EventFlowX",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "eventflowx-admin-pass",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin", "user"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "eventflowx-ui",
+      "name": "EventFlowX UI",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:6767/*",
+        "http://localhost:8081/*"
+      ],
+      "webOrigins": [
+        "http://localhost:6767",
+        "http://localhost:8081"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ]
+}

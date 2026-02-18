@@ -13,4 +13,9 @@ public class BookingCreatedEvent {
     public String getUserId() { return userId; }
     public String getEventId() { return eventId; }
     public String getTimestamp() { return timestamp; }
+
+    public void setBookingId(String bookingId) { this.bookingId = bookingId; }
+    public void setUserId(String userId) { this.userId = userId; }
+    public void setEventId(String eventId) { this.eventId = eventId; }
+    public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
 }

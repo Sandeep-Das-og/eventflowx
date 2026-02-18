@@ -1,0 +1,148 @@
+name: eventflowx
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  zipkin:
+    image: openzipkin/zipkin:3
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: keycloak_db
+      KC_DB_USERNAME: keycloak_user
+      KC_DB_PASSWORD: keycloak_password
+    volumes:
+      - ./docker/keycloak/realm-eventflowx.json:/opt/keycloak/data/import/realm-eventflowx.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "9090:8080"
+
+  booking-service:
+    build:
+      context: .
+      dockerfile: services/booking-service/Dockerfile
+    container_name: booking-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      zipkin:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      RABBITMQ_HOST: rabbitmq
+      BOOKING_DB_URL: jdbc:postgresql://postgres:5432/booking_db
+      BOOKING_DB_USERNAME: booking_user
+      BOOKING_DB_PASSWORD: booking_password
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+
+  wallet-service:
+    build:
+      context: .
+      dockerfile: services/wallet-service/Dockerfile
+    container_name: wallet-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      zipkin:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      RABBITMQ_HOST: rabbitmq
+      WALLET_DB_URL: jdbc:postgresql://postgres:5432/wallet_db
+      WALLET_DB_USERNAME: wallet_user
+      WALLET_DB_PASSWORD: wallet_password
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: api-gateway
+    depends_on:
+      booking-service:
+        condition: service_started
+      wallet-service:
+        condition: service_started
+      event-service:
+        condition: service_started
+      zipkin:
+        condition: service_started
+      keycloak:
+        condition: service_started
+    environment:
+      BOOKING_SERVICE_URL: http://booking-service:8080
+      WALLET_SERVICE_URL: http://wallet-service:8084
+      EVENT_SERVICE_URL: http://event-service:8082
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/eventflowx
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    ports:
+      - "8081:8081"
+
+  event-service:
+    build:
+      context: .
+      dockerfile: services/event-service/Dockerfile
+    container_name: event-service
+    depends_on:
+      zipkin:
+        condition: service_started
+    environment:
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+
+  ui-app:
+    build:
+      context: .
+      dockerfile: services/ui-app/Dockerfile
+    container_name: ui-app
+    depends_on:
+      api-gateway:
+        condition: service_started
+    ports:
+      - "6767:80"
+
+volumes:
+  postgres-data:

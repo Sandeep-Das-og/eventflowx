@@ -1,38 +1,71 @@
 package com.eventflowx.common.events;
 
 import jakarta.persistence.*;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "outbox_events")
 public class OutboxEvent {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    private String aggregateType;
+    private String aggregateId;
     private String eventType;
 
     @Column(columnDefinition = "TEXT")
     private String payload;
 
-    private boolean published;
+    private boolean processed;
+    private int retryCount;
 
-    private Instant createdAt = Instant.now();
+    private LocalDateTime createdAt;
 
     public OutboxEvent() {}
 
-    public String getId() { return id; }
+    public OutboxEvent(String aggregateType,
+                       String aggregateId,
+                       String eventType,
+                       String payload) {
+        this.id = UUID.randomUUID().toString();
+        this.aggregateType = aggregateType;
+        this.aggregateId = aggregateId;
+        this.eventType = eventType;
+        this.payload = payload;
+        this.processed = false;
+        this.retryCount = 0;
+        this.createdAt = LocalDateTime.now();
+    }
 
-    public String getEventType() { return eventType; }
-    public void setEventType(String eventType) { this.eventType = eventType; }
+    // setters
 
-    public String getPayload() { return payload; }
-    public void setPayload(String payload) { this.payload = payload; }
+    public void setPayload(String payload) {
+        this.payload = payload;
+    }
 
-    public boolean isPublished() { return published; }
-    public void setPublished(boolean published) { this.published = published; }
+    public void markProcessed() {
+        this.processed = true;
+    }
 
-    public Instant getCreatedAt() { return createdAt; }
+    public void incrementRetry() {
+        this.retryCount++;
+    }
+
+    public void setProcessed(boolean processed) {
+        this.processed = processed;
+    }
+
+    public boolean canRetry() {
+        return retryCount < 5;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
 }
-

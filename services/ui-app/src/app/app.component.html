@@ -1,0 +1,72 @@
+<div class="shell">
+  <header class="hero">
+    <div class="hero-top">
+      <div>
+        <p class="eyebrow">EventFlowX Control Surface</p>
+        <h1>Booking + Wallet UI</h1>
+        <p class="subtitle">Angular + TypeScript frontend routed through API Gateway</p>
+      </div>
+      <div class="session">
+        <span>{{ username }}</span>
+        <button type="button" (click)="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="status" *ngIf="message || error || loading">
+    <div class="status-item ok" *ngIf="message">{{ message }}</div>
+    <div class="status-item err" *ngIf="error">{{ error }}</div>
+    <div class="status-item" *ngIf="loading">Processing...</div>
+  </section>
+
+  <main class="grid">
+    <article class="card">
+      <h2>Create Booking</h2>
+      <form [formGroup]="bookingForm" (ngSubmit)="submitBooking()">
+        <label>Customer Name</label>
+        <input type="text" formControlName="customerName" placeholder="alice">
+
+        <label>Event Name</label>
+        <input type="text" formControlName="eventName" placeholder="concert-night">
+
+        <button type="submit" [disabled]="loading || bookingForm.invalid">Create</button>
+      </form>
+      <p class="meta" *ngIf="bookingId">Last booking id: <strong>{{ bookingId }}</strong></p>
+    </article>
+
+    <article class="card">
+      <h2>Fetch Wallet</h2>
+      <form [formGroup]="walletForm" (ngSubmit)="fetchWallet()">
+        <label>User Id</label>
+        <input type="text" formControlName="userId" placeholder="alice">
+        <button type="submit" [disabled]="loading || walletForm.invalid">Fetch</button>
+      </form>
+      <p class="meta" *ngIf="walletBalance !== null">Current balance: <strong>{{ walletBalance }}</strong></p>
+    </article>
+
+    <article class="card">
+      <h2>Credit Wallet</h2>
+      <form [formGroup]="creditForm" (ngSubmit)="creditWallet()">
+        <label>User Id</label>
+        <input type="text" formControlName="userId" placeholder="alice">
+
+        <label>Amount</label>
+        <input type="number" formControlName="amount" min="1">
+
+        <button type="submit" [disabled]="loading || creditForm.invalid">Credit</button>
+      </form>
+    </article>
+
+    <article class="card">
+      <h2>Events</h2>
+      <button type="button" (click)="loadEvents()" [disabled]="loading">Load Events</button>
+      <ul class="event-list" *ngIf="events.length > 0">
+        <li *ngFor="let event of events">
+          <strong>{{ event.name }}</strong>
+          <span>{{ event.city }}</span>
+          <span>{{ event.price }}</span>
+        </li>
+      </ul>
+    </article>
+  </main>
+</div>

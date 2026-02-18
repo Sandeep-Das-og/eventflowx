@@ -1,0 +1,30 @@
+:root {
+  --bg: #f3f1ea;
+  --surface: #ffffff;
+  --text: #1f2430;
+  --muted: #5e667a;
+  --accent: #ca5a2e;
+  --accent-2: #123b66;
+  --ok: #2f8f4e;
+  --danger: #b93838;
+  --border: #ddd6c6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 8% 20%, #fde7c3 0%, transparent 35%),
+    radial-gradient(circle at 85% 10%, #dbe8ff 0%, transparent 30%),
+    var(--bg);
+}
+
+button,
+input {
+  font: inherit;
+}

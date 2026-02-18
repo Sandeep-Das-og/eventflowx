@@ -1,0 +1,105 @@
+{
+  "info": {
+    "name": "EventFlowX API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Booking",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerName\": \"alice\",\n  \"eventName\": \"concert-night\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/bookings",
+          "host": ["{{baseUrl}}"],
+          "path": ["bookings"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "var body = pm.response.json();",
+              "pm.expect(body.bookingId).to.exist;",
+              "pm.collectionVariables.set('lastBookingId', body.bookingId);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fetch Wallet",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/wallets/alice",
+          "host": ["{{baseUrl}}"],
+          "path": ["wallets", "alice"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "var body = pm.response.json();",
+              "pm.expect(body.userId).to.eql('alice');",
+              "pm.expect(body.balance).to.be.a('number');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Credit Wallet",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/wallets/alice/credit?amount=100",
+          "host": ["{{baseUrl}}"],
+          "path": ["wallets", "alice", "credit"],
+          "query": [
+            {
+              "key": "amount",
+              "value": "100"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "var body = pm.response.json();",
+              "pm.expect(body.userId).to.eql('alice');",
+              "pm.expect(body.balance).to.be.a('number');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

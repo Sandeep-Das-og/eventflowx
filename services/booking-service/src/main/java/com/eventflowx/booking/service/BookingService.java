@@ -3,8 +3,8 @@ package com.eventflowx.booking.service;
 import com.eventflowx.booking.domain.Booking;
 import com.eventflowx.booking.domain.BookingRepository;
 import com.eventflowx.booking.events.BookingCreatedEvent;
-import com.eventflowx.common.events.OutboxEvent;
 import com.eventflowx.common.domain.OutboxRepository;
+import com.eventflowx.common.events.OutboxEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,13 +26,10 @@ public class BookingService {
     }
 
     @Transactional
-    public String createBooking(String customerName, String eventName) throws Exception {
+    public String createBooking(String customerName, String eventName) {
 
-        // 1️⃣ Save booking
-        Booking booking = new Booking(customerName, eventName);
-        bookingRepository.save(booking);
+        Booking booking = bookingRepository.save(new Booking(customerName, eventName));
 
-        // 2️⃣ Create domain event
         BookingCreatedEvent event = new BookingCreatedEvent(
                 "corr-" + booking.getId(),
                 booking.getId(),
@@ -40,13 +37,17 @@ public class BookingService {
                 eventName
         );
 
-        // 3️⃣ Store in outbox
-        OutboxEvent outbox = new OutboxEvent();
-        outbox.setEventType(event.getClass().getSimpleName());
-        outbox.setPayload(objectMapper.writeValueAsString(event));
-        outbox.setPublished(false);
-
-        outboxRepository.save(outbox);
+        try {
+            OutboxEvent outbox = new OutboxEvent(
+                    "Booking",
+                    booking.getId(),
+                    event.getClass().getSimpleName(),
+                    objectMapper.writeValueAsString(event)
+            );
+            outboxRepository.save(outbox);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to persist outbox event", e);
+        }
 
         return booking.getId();
     }
