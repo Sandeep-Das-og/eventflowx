@@ -73,6 +73,14 @@ npm run build:prod
 
 ### Option 1: Full stack with Docker Compose (recommended)
 
+Create local env file first:
+
+```bash
+cp .env.example .env
+```
+
+Update `.env` with strong local values, then run:
+
 ```bash
 ./gradlew clean build
 docker compose up --build

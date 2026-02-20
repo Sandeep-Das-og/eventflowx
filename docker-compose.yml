@@ -17,8 +17,8 @@ services:
     image: postgres:16
     container_name: postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -41,14 +41,14 @@ services:
     container_name: keycloak
     command: ["start-dev", "--import-realm"]
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
       KC_DB: postgres
       KC_DB_URL_HOST: postgres
       KC_DB_URL_PORT: 5432
       KC_DB_URL_DATABASE: keycloak_db
-      KC_DB_USERNAME: keycloak_user
-      KC_DB_PASSWORD: keycloak_password
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
     volumes:
       - ./docker/keycloak/realm-eventflowx.json:/opt/keycloak/data/import/realm-eventflowx.json:ro
     depends_on:
@@ -72,9 +72,9 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: dev
       RABBITMQ_HOST: rabbitmq
-      BOOKING_DB_URL: jdbc:postgresql://postgres:5432/booking_db
-      BOOKING_DB_USERNAME: booking_user
-      BOOKING_DB_PASSWORD: booking_password
+      BOOKING_DB_URL: ${BOOKING_DB_URL}
+      BOOKING_DB_USERNAME: ${BOOKING_DB_USERNAME}
+      BOOKING_DB_PASSWORD: ${BOOKING_DB_PASSWORD}
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
 
   wallet-service:
@@ -92,9 +92,9 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: dev
       RABBITMQ_HOST: rabbitmq
-      WALLET_DB_URL: jdbc:postgresql://postgres:5432/wallet_db
-      WALLET_DB_USERNAME: wallet_user
-      WALLET_DB_PASSWORD: wallet_password
+      WALLET_DB_URL: ${WALLET_DB_URL}
+      WALLET_DB_USERNAME: ${WALLET_DB_USERNAME}
+      WALLET_DB_PASSWORD: ${WALLET_DB_PASSWORD}
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
 
   api-gateway:
