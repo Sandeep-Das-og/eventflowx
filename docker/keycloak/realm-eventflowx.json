@@ -1,12 +1,37 @@
 {
   "realm": "eventflowx",
   "enabled": true,
+  "loginWithEmailAllowed": true,
+  "registrationAllowed": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": false,
+  "verifyEmail": true,
+  "accessTokenLifespan": 900,
+  "accessTokenLifespanForImplicitFlow": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "revokeRefreshToken": true,
+  "refreshTokenMaxReuse": 0,
   "roles": {
     "realm": [
       { "name": "user" },
-      { "name": "admin" }
+      { "name": "admin" },
+      { "name": "event.read" },
+      { "name": "booking.write" },
+      { "name": "wallet.read" },
+      { "name": "wallet.credit" }
     ]
   },
+  "groups": [
+    {
+      "name": "customers",
+      "realmRoles": ["user", "event.read", "booking.write", "wallet.read", "wallet.credit"]
+    },
+    {
+      "name": "ops-admins",
+      "realmRoles": ["admin", "user", "event.read", "booking.write", "wallet.read", "wallet.credit"]
+    }
+  ],
   "users": [
     {
       "username": "eventflowx-user",
@@ -14,6 +39,7 @@
       "emailVerified": true,
       "firstName": "EventFlowX",
       "lastName": "User",
+      "email": "user@eventflowx.local",
       "credentials": [
         {
           "type": "password",
@@ -21,7 +47,8 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["user"]
+      "groups": ["/customers"],
+      "realmRoles": ["user", "event.read", "booking.write", "wallet.read", "wallet.credit"]
     },
     {
       "username": "eventflowx-admin",
@@ -29,6 +56,7 @@
       "emailVerified": true,
       "firstName": "EventFlowX",
       "lastName": "Admin",
+      "email": "admin@eventflowx.local",
       "credentials": [
         {
           "type": "password",
@@ -36,7 +64,8 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["admin", "user"]
+      "groups": ["/ops-admins"],
+      "realmRoles": ["admin", "user", "event.read", "booking.write", "wallet.read", "wallet.credit"]
     }
   ],
   "clients": [
@@ -45,8 +74,26 @@
       "name": "EventFlowX UI",
       "enabled": true,
       "publicClient": true,
+      "fullScopeAllowed": true,
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
+      "defaultClientScopes": ["profile", "email", "roles"],
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String"
+          }
+        }
+      ],
       "redirectUris": [
         "http://localhost:6767/*",
         "http://localhost:8081/*"

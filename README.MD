@@ -139,6 +139,17 @@ SPRING_PROFILES_ACTIVE=dev ./gradlew :services:booking-service:bootRun
 
 - Realm: `eventflowx`
 - Client: `eventflowx-ui` (public client)
+- IAM role model:
+  - Base roles: `user`, `admin`
+  - Fine-grained roles: `event.read`, `booking.write`, `wallet.read`, `wallet.credit`
+- IAM groups:
+  - `customers`: mapped to user + functional roles
+  - `ops-admins`: mapped to admin + functional roles
+- Token/session policy:
+  - Access token lifespan: 15 minutes
+  - SSO idle timeout: 30 minutes
+  - SSO max lifespan: 8 hours
+  - Refresh token rotation enabled (`revokeRefreshToken=true`)
 - Demo users:
   - `eventflowx-user` / `eventflowx-pass`
   - `eventflowx-admin` / `eventflowx-admin-pass`
@@ -154,14 +165,11 @@ TOKEN=$(curl -s -X POST "http://localhost:9090/realms/eventflowx/protocol/openid
   -d "password=eventflowx-pass" | sed -n 's/.*\"access_token\":\"\\([^\"]*\\)\".*/\\1/p')
 ```
 
-### IAM Work Remaining (Role-Based Access)
-
-- Define resource-level role model (e.g. `booking.read`, `booking.write`, `wallet.credit`, `admin`).
-- Map Keycloak realm/client roles to API Gateway route authorization rules.
-- Enforce role checks in backend service APIs (method/endpoint-level authorization), not only at gateway.
-- Add role-aware UI behavior (menu visibility, page guards, action-level enable/disable).
-- Add automated authorization tests (positive and negative cases per role).
-- Add token/session hardening policy (idle timeout, refresh token policy, logout/session revocation checks).
+Gateway authorization mapping:
+- `GET /events/**` -> `event.read` or `admin`
+- `POST /bookings/**` -> `booking.write` or `admin`
+- `GET /wallets/**` -> `wallet.read` or `admin`
+- `POST /wallets/*/credit` -> `wallet.credit` or `admin`
 
 ## Quick API Smoke Test
 

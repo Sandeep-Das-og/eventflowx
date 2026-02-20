@@ -118,6 +118,7 @@ services:
       WALLET_SERVICE_URL: http://wallet-service:8084
       EVENT_SERVICE_URL: http://event-service:8082
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/eventflowx
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/eventflowx/protocol/openid-connect/certs
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
     ports:
       - "8081:8081"
