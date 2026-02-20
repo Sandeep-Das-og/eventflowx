@@ -6,6 +6,8 @@ import jakarta.validation.Valid;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,8 +24,19 @@ public class BookingController {
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, String>> create(@Valid @RequestBody CreateBookingRequest request) {
-        String bookingId = bookingService.createBooking(request.customerName(), request.eventName());
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("bookingId", bookingId));
+    public ResponseEntity<Map<String, Object>> create(@Valid @RequestBody CreateBookingRequest request) {
+        String bookingId = bookingService.createBooking(request.userId(), request.eventId(), request.eventName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "bookingId", bookingId,
+                "paymentRequired", true,
+                "eventId", request.eventId(),
+                "userId", request.userId()
+        ));
+    }
+
+    @GetMapping("/analytics/events/{eventId}")
+    public ResponseEntity<Map<String, Object>> eventAnalytics(@PathVariable String eventId) {
+        long count = bookingService.countByEventId(eventId);
+        return ResponseEntity.ok(Map.of("eventId", eventId, "bookingsCount", count));
     }
 }

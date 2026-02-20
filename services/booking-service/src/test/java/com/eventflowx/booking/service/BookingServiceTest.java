@@ -34,7 +34,7 @@ class BookingServiceTest {
 
     @Test
     void createBooking_savesBookingAndOutbox() throws Exception {
-        Booking booking = new Booking("u1", "concert");
+        Booking booking = new Booking("u1", "e1", "concert");
         var idField = Booking.class.getDeclaredField("id");
         idField.setAccessible(true);
         idField.set(booking, "booking-1");
@@ -42,7 +42,7 @@ class BookingServiceTest {
         when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
         when(objectMapper.writeValueAsString(any())).thenReturn("{\"event\":\"BOOKING_CREATED\"}");
 
-        String result = bookingService.createBooking("u1", "concert");
+        String result = bookingService.createBooking("u1", "e1", "concert");
 
         assertThat(result).isEqualTo("booking-1");
         verify(bookingRepository).save(any(Booking.class));

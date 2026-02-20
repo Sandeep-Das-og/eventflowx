@@ -26,15 +26,15 @@ public class BookingService {
     }
 
     @Transactional
-    public String createBooking(String customerName, String eventName) {
+    public String createBooking(String userId, String eventId, String eventName) {
 
-        Booking booking = bookingRepository.save(new Booking(customerName, eventName));
+        Booking booking = bookingRepository.save(new Booking(userId, eventId, eventName));
 
         BookingCreatedEvent event = new BookingCreatedEvent(
                 "corr-" + booking.getId(),
                 booking.getId(),
-                customerName,
-                eventName
+                userId,
+                eventId
         );
 
         try {
@@ -50,5 +50,10 @@ public class BookingService {
         }
 
         return booking.getId();
+    }
+
+    @Transactional(readOnly = true)
+    public long countByEventId(String eventId) {
+        return bookingRepository.countByEventId(eventId);
     }
 }
