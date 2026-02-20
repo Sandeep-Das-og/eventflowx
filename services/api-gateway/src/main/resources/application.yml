@@ -62,6 +62,25 @@ spring:
                   maxBackoff: 2s
                   factor: 2
                   basedOnPreviousValue: true
+        - id: payment-service
+          uri: ${WALLET_SERVICE_URL:http://wallet-service:8084}
+          predicates:
+            - Path=/payments/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: paymentCircuitBreaker
+                fallbackUri: forward:/fallback/wallets
+            - name: Retry
+              args:
+                retries: 3
+                methods:
+                  - POST
+                backoff:
+                  firstBackoff: 200ms
+                  maxBackoff: 2s
+                  factor: 2
+                  basedOnPreviousValue: true
         - id: event-service
           uri: ${EVENT_SERVICE_URL:http://event-service:8082}
           predicates:
@@ -79,6 +98,26 @@ spring:
                 backoff:
                   firstBackoff: 200ms
                   maxBackoff: 2s
+                  factor: 2
+                  basedOnPreviousValue: true
+        - id: event-admin-service
+          uri: ${EVENT_SERVICE_URL:http://event-service:8082}
+          predicates:
+            - Path=/admin/events/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: eventAdminCircuitBreaker
+                fallbackUri: forward:/fallback/events
+            - name: Retry
+              args:
+                retries: 2
+                methods:
+                  - GET
+                  - POST
+                backoff:
+                  firstBackoff: 200ms
+                  maxBackoff: 1s
                   factor: 2
                   basedOnPreviousValue: true
 
@@ -112,7 +151,19 @@ resilience4j:
         minimumNumberOfCalls: 5
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
+      paymentCircuitBreaker:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
       eventCircuitBreaker:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+      eventAdminCircuitBreaker:
         slidingWindowType: COUNT_BASED
         slidingWindowSize: 10
         minimumNumberOfCalls: 5

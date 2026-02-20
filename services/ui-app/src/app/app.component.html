@@ -1,72 +1,123 @@
 <div class="shell">
-  <header class="hero">
-    <div class="hero-top">
-      <div>
-        <p class="eyebrow">EventFlowX Control Surface</p>
-        <h1>Booking + Wallet UI</h1>
-        <p class="subtitle">Angular + TypeScript frontend routed through API Gateway</p>
-      </div>
-      <div class="session">
-        <span>{{ username }}</span>
-        <button type="button" (click)="logout()">Logout</button>
-      </div>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">EventFlowX</p>
+      <h1>Operations Dashboard</h1>
+    </div>
+    <div class="session">
+      <span>{{ username }}</span>
+      <span class="badge" *ngIf="isAdmin">Admin</span>
+      <button type="button" (click)="logout()">Logout</button>
     </div>
   </header>
 
   <section class="status" *ngIf="message || error || loading">
-    <div class="status-item ok" *ngIf="message">{{ message }}</div>
-    <div class="status-item err" *ngIf="error">{{ error }}</div>
-    <div class="status-item" *ngIf="loading">Processing...</div>
+    <div class="ok" *ngIf="message">{{ message }}</div>
+    <div class="err" *ngIf="error">{{ error }}</div>
+    <div *ngIf="loading">Processing...</div>
   </section>
 
   <main class="grid">
-    <article class="card">
-      <h2>Create Booking</h2>
-      <form [formGroup]="bookingForm" (ngSubmit)="submitBooking()">
-        <label>Customer Name</label>
-        <input type="text" formControlName="customerName" placeholder="alice">
+    <ng-container *ngIf="isAdmin; else userView">
+      <article class="card">
+        <h2>Create Event</h2>
+        <form [formGroup]="eventForm" (ngSubmit)="createEvent()">
+          <label>Name</label>
+          <input formControlName="name" type="text">
+          <label>City</label>
+          <input formControlName="city" type="text">
+          <label>Price</label>
+          <input formControlName="price" type="number" min="1">
+          <button type="submit" [disabled]="eventForm.invalid || loading">Create Event</button>
+        </form>
+      </article>
 
-        <label>Event Name</label>
-        <input type="text" formControlName="eventName" placeholder="concert-night">
+      <article class="card wide">
+        <h2>Event Inventory</h2>
+        <button (click)="loadEvents()" [disabled]="loading">Refresh</button>
+        <ul class="event-list">
+          <li *ngFor="let event of events">
+            <div>
+              <strong>{{ event.name }}</strong>
+              <span>{{ event.city }} | {{ event.price }}</span>
+            </div>
+            <button (click)="viewAnalytics(event)">Analytics</button>
+          </li>
+        </ul>
+      </article>
 
-        <button type="submit" [disabled]="loading || bookingForm.invalid">Create</button>
-      </form>
-      <p class="meta" *ngIf="bookingId">Last booking id: <strong>{{ bookingId }}</strong></p>
-    </article>
+      <article class="card" *ngIf="selectedAnalytics">
+        <h2>Event Analytics</h2>
+        <p><strong>{{ selectedAnalytics.eventName }}</strong></p>
+        <p>Bookings: {{ selectedAnalytics.bookingsCount }}</p>
+        <p>Price: {{ selectedAnalytics.price }}</p>
+        <p>City: {{ selectedAnalytics.city }}</p>
+      </article>
+    </ng-container>
 
-    <article class="card">
-      <h2>Fetch Wallet</h2>
-      <form [formGroup]="walletForm" (ngSubmit)="fetchWallet()">
-        <label>User Id</label>
-        <input type="text" formControlName="userId" placeholder="alice">
-        <button type="submit" [disabled]="loading || walletForm.invalid">Fetch</button>
-      </form>
-      <p class="meta" *ngIf="walletBalance !== null">Current balance: <strong>{{ walletBalance }}</strong></p>
-    </article>
+    <ng-template #userView>
+      <article class="card wide">
+        <h2>Available Events</h2>
+        <button (click)="loadEvents()" [disabled]="loading">Refresh</button>
+        <ul class="event-list">
+          <li *ngFor="let event of events">
+            <div>
+              <strong>{{ event.name }}</strong>
+              <span>{{ event.city }} | {{ event.price }}</span>
+            </div>
+            <button (click)="startBooking(event)">Book</button>
+          </li>
+        </ul>
+      </article>
 
-    <article class="card">
-      <h2>Credit Wallet</h2>
-      <form [formGroup]="creditForm" (ngSubmit)="creditWallet()">
-        <label>User Id</label>
-        <input type="text" formControlName="userId" placeholder="alice">
-
-        <label>Amount</label>
-        <input type="number" formControlName="amount" min="1">
-
-        <button type="submit" [disabled]="loading || creditForm.invalid">Credit</button>
-      </form>
-    </article>
-
-    <article class="card">
-      <h2>Events</h2>
-      <button type="button" (click)="loadEvents()" [disabled]="loading">Load Events</button>
-      <ul class="event-list" *ngIf="events.length > 0">
-        <li *ngFor="let event of events">
-          <strong>{{ event.name }}</strong>
-          <span>{{ event.city }}</span>
-          <span>{{ event.price }}</span>
-        </li>
-      </ul>
-    </article>
+      <article class="card" *ngIf="selectedEvent">
+        <h2>Booking Form</h2>
+        <form [formGroup]="bookingForm" (ngSubmit)="submitBooking()">
+          <label>User</label>
+          <input formControlName="userId" type="text" readonly>
+          <label>Event</label>
+          <input formControlName="eventName" type="text" readonly>
+          <button type="submit" [disabled]="bookingForm.invalid || loading">Submit Booking</button>
+        </form>
+      </article>
+      <article class="card wide" *ngIf="showPaymentPanel && bookingId">
+        <h2>Payment</h2>
+        <p>Booking ID: <strong>{{ bookingId }}</strong></p>
+        <form [formGroup]="paymentForm">
+          <label>Amount</label>
+          <input type="number" min="1" formControlName="amount">
+        </form>
+        <div class="gateway-grid">
+          <button
+            type="button"
+            class="gateway-card"
+            *ngFor="let gateway of paymentGateways"
+            [class.selected]="gateway.code === selectedGateway"
+            (click)="selectGateway(gateway.code)">
+            <strong>{{ gateway.name }}</strong>
+            <span>{{ gateway.subtitle }}</span>
+            <em *ngIf="gateway.code === selectedGateway">Selected</em>
+          </button>
+        </div>
+        <div class="method-grid">
+          <button
+            type="button"
+            class="method-chip"
+            *ngFor="let method of paymentMethods"
+            [class.selected]="method.code === selectedPaymentMethod"
+            [disabled]="!isMethodSupported(selectedGateway, method.code)"
+            (click)="selectPaymentMethod(method.code)">
+            {{ method.label }}
+          </button>
+        </div>
+        <button
+          type="button"
+          (click)="submitPayment()"
+          [disabled]="paymentForm.invalid || loading || !bookingId">
+          Pay with {{ selectedGateway }} ({{ selectedPaymentMethod }})
+        </button>
+        <p *ngIf="paymentStatus">{{ paymentStatus }}</p>
+      </article>
+    </ng-template>
   </main>
 </div>

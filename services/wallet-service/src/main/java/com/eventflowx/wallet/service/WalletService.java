@@ -5,6 +5,8 @@ import com.eventflowx.wallet.domain.ProcessedEventRepository;
 import com.eventflowx.wallet.domain.Wallet;
 import com.eventflowx.wallet.domain.WalletRepository;
 import com.eventflowx.wallet.messaging.BookingCreatedEvent;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +23,7 @@ public class WalletService {
     private final ProcessedEventRepository processedEventRepository;
     private final double defaultBalance;
     private final double bookingCharge;
+    private static final List<String> SUPPORTED_METHODS = List.of("UPI", "CREDIT_CARD", "DEBIT_CARD");
 
     public WalletService(
             WalletRepository walletRepository,
@@ -40,15 +43,13 @@ public class WalletService {
             return;
         }
 
-        Wallet wallet = walletRepository.findById(event.getUserId())
-                .orElseGet(() -> new Wallet(event.getUserId(), defaultBalance));
+        walletRepository.findById(event.getUserId())
+                .orElseGet(() -> walletRepository.save(new Wallet(event.getUserId(), defaultBalance)));
 
-        wallet.debit(bookingCharge);
-        walletRepository.save(wallet);
         processedEventRepository.save(new ProcessedEvent(event.getEventId()));
 
-        log.info("Processed booking event eventId={} bookingId={} userId={} debited={}",
-                event.getEventId(), event.getBookingId(), event.getUserId(), bookingCharge);
+        log.info("Registered booking event eventId={} bookingId={} userId={} (payment pending)",
+                event.getEventId(), event.getBookingId(), event.getUserId());
     }
 
     @Transactional(readOnly = true)
@@ -62,5 +63,47 @@ public class WalletService {
                 .orElseGet(() -> new Wallet(userId, defaultBalance));
         wallet.credit(amount);
         return walletRepository.save(wallet);
+    }
+
+    @Transactional
+    public Map<String, Object> chargePayment(
+            String bookingId,
+            String userId,
+            String paymentGateway,
+            String paymentMethodType,
+            double amount) {
+        validateGatewayAndMethod(paymentGateway, paymentMethodType);
+
+        Wallet wallet = walletRepository.findById(userId)
+                .orElseGet(() -> new Wallet(userId, defaultBalance));
+
+        wallet.debit(amount);
+        Wallet saved = walletRepository.save(wallet);
+
+        return Map.of(
+                "bookingId", bookingId,
+                "userId", userId,
+                "paymentGateway", paymentGateway,
+                "paymentMethodType", paymentMethodType,
+                "status", "SUCCESS",
+                "chargedAmount", amount,
+                "remainingBalance", saved.getBalance()
+        );
+    }
+
+    private void validateGatewayAndMethod(String paymentGateway, String paymentMethodType) {
+        if (!SUPPORTED_METHODS.contains(paymentMethodType)) {
+            throw new IllegalArgumentException("Unsupported paymentMethodType: " + paymentMethodType);
+        }
+
+        boolean supported = switch (paymentGateway) {
+            case "RAZORPAY" -> true;
+            case "STRIPE", "PAYPAL" -> !"UPI".equals(paymentMethodType);
+            default -> false;
+        };
+
+        if (!supported) {
+            throw new IllegalArgumentException("Unsupported gateway/method combination");
+        }
     }
 }

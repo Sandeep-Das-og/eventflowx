@@ -48,7 +48,7 @@ class WalletServiceTest {
     }
 
     @Test
-    void processBookingCreated_debitsWalletForNewEvent() {
+    void processBookingCreated_registersEventWithoutDebitingWallet() {
         BookingCreatedEvent event = new BookingCreatedEvent();
         event.setEventId("evt-1");
         event.setBookingId("booking-1");
@@ -59,8 +59,7 @@ class WalletServiceTest {
 
         walletService.processBookingCreated(event);
 
-        verify(walletRepository).save(org.mockito.ArgumentMatchers.argThat(wallet ->
-                wallet.getUserId().equals("user-1") && wallet.getBalance() == 950));
+        verify(walletRepository, never()).save(any(Wallet.class));
         verify(processedEventRepository).save(org.mockito.ArgumentMatchers.any());
     }
 
@@ -72,5 +71,18 @@ class WalletServiceTest {
         Wallet wallet = walletService.credit("user-2", 25);
 
         assertThat(wallet.getBalance()).isEqualTo(225);
+    }
+
+    @Test
+    void chargePayment_debitsWallet() {
+        when(walletRepository.findById("user-3")).thenReturn(Optional.of(new Wallet("user-3", 300)));
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = walletService.chargePayment("booking-3", "user-3", "RAZORPAY", "UPI", 75);
+
+        assertThat(response.get("status")).isEqualTo("SUCCESS");
+        assertThat(response.get("remainingBalance")).isEqualTo(225.0);
+        verify(walletRepository).save(org.mockito.ArgumentMatchers.argThat(wallet ->
+                wallet.getUserId().equals("user-3") && wallet.getBalance() == 225));
     }
 }

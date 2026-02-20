@@ -59,7 +59,7 @@ class WalletServiceIntegrationTest {
         walletService.processBookingCreated(event);
 
         var wallet = walletRepository.findById("user-123").orElseThrow();
-        assertThat(wallet.getBalance()).isEqualTo(950);
+        assertThat(wallet.getBalance()).isEqualTo(1000);
         assertThat(processedEventRepository.count()).isEqualTo(1);
     }
 }

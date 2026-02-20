@@ -48,7 +48,7 @@ class BookingControllerIntegrationTest {
     void createBooking_returnsCreated() throws Exception {
         mockMvc.perform(post("/bookings")
                         .contentType("application/json")
-                        .content("{\"customerName\":\"alice\",\"eventName\":\"concert\"}"))
+                        .content("{\"userId\":\"alice\",\"eventId\":\"event-1\",\"eventName\":\"concert\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.bookingId").isNotEmpty());
     }
