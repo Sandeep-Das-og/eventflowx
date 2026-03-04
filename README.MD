@@ -236,6 +236,19 @@ Run module unit tests:
 ./gradlew :services:event-service:test
 ```
 
+### SonarQube PR Scan (GitHub Actions)
+
+Workflow: `.github/workflows/build.yml`
+
+- Build job runs on push and PR.
+- Sonar job runs on PR when these repository secrets are present:
+  - `SONAR_TOKEN`
+  - `SONAR_HOST_URL`
+  - `SONAR_PROJECT_KEY`
+- Sonar quality gate is executed as part of the PR workflow.
+
+Recommended: mark this workflow as a required status check in branch protection once secrets are configured.
+
 Run UI unit tests:
 
 ```bash
