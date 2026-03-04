@@ -15,7 +15,7 @@ spring:
         corsConfigurations:
           '[/**]':
             allowedOrigins:
-              - "http://localhost:6767"
+              - ${ALLOWED_ORIGIN_1:http://localhost:6767}
             allowedMethods:
               - GET
               - POST
@@ -23,7 +23,10 @@ spring:
               - DELETE
               - OPTIONS
             allowedHeaders:
-              - "*"
+              - Authorization
+              - Content-Type
+              - X-Request-Id
+              - X-Correlation-Id
             allowCredentials: true
       default-filters:
         - name: SecureHeaders
@@ -35,6 +38,9 @@ spring:
           uri: ${BOOKING_SERVICE_URL:http://booking-service:8080}
           predicates:
             - Path=/bookings/**
+          metadata:
+            connect-timeout: 3000
+            response-timeout: 7000
           filters:
             - name: CircuitBreaker
               args:
@@ -55,6 +61,9 @@ spring:
           uri: ${WALLET_SERVICE_URL:http://wallet-service:8084}
           predicates:
             - Path=/wallets/**
+          metadata:
+            connect-timeout: 3000
+            response-timeout: 7000
           filters:
             - name: CircuitBreaker
               args:
@@ -75,6 +84,9 @@ spring:
           uri: ${WALLET_SERVICE_URL:http://wallet-service:8084}
           predicates:
             - Path=/payments/**
+          metadata:
+            connect-timeout: 3000
+            response-timeout: 8000
           filters:
             - name: CircuitBreaker
               args:
@@ -94,6 +106,9 @@ spring:
           uri: ${EVENT_SERVICE_URL:http://event-service:8082}
           predicates:
             - Path=/events/**
+          metadata:
+            connect-timeout: 3000
+            response-timeout: 7000
           filters:
             - name: CircuitBreaker
               args:
@@ -113,6 +128,9 @@ spring:
           uri: ${EVENT_SERVICE_URL:http://event-service:8082}
           predicates:
             - Path=/admin/events/**
+          metadata:
+            connect-timeout: 3000
+            response-timeout: 7000
           filters:
             - name: CircuitBreaker
               args:
@@ -150,6 +168,14 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+eventflowx:
+  gateway:
+    cors:
+      allowed-origins: ${EVENTFLOWX_ALLOWED_ORIGINS:http://localhost:6767}
+    rate-limit:
+      enabled: ${EVENTFLOWX_RATE_LIMIT_ENABLED:true}
+      requests-per-minute: ${EVENTFLOWX_RATE_LIMIT_RPM:120}
 
 resilience4j:
   circuitbreaker:
