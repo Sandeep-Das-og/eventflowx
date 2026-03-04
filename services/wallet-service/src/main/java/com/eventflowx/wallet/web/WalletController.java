@@ -8,6 +8,7 @@ import jakarta.validation.constraints.DecimalMin;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +29,7 @@ public class WalletController {
     }
 
     @GetMapping("/wallets/{userId}")
+    @PreAuthorize("hasAuthority('ROLE_admin')")
     public ResponseEntity<?> getWallet(@PathVariable String userId) {
         return walletService.getWallet(userId)
                 .<ResponseEntity<?>>map(wallet -> ResponseEntity.ok(Map.of(
@@ -38,6 +40,7 @@ public class WalletController {
     }
 
     @PostMapping("/wallets/{userId}/credit")
+    @PreAuthorize("hasAuthority('ROLE_admin')")
     public ResponseEntity<Map<String, Object>> credit(
             @PathVariable String userId,
             @RequestParam @DecimalMin(value = "0.01") double amount) {
@@ -47,6 +50,7 @@ public class WalletController {
     }
 
     @PostMapping("/payments/charge")
+    @PreAuthorize("hasAnyAuthority('ROLE_wallet.credit', 'ROLE_admin')")
     public ResponseEntity<Map<String, Object>> charge(@Valid @RequestBody ChargePaymentRequest request) {
         return ResponseEntity.ok(walletService.chargePayment(
                 request.bookingId(),

@@ -75,6 +75,8 @@ services:
       BOOKING_DB_URL: ${BOOKING_DB_URL}
       BOOKING_DB_USERNAME: ${BOOKING_DB_USERNAME}
       BOOKING_DB_PASSWORD: ${BOOKING_DB_PASSWORD}
+      KEYCLOAK_ISSUER_URI: http://localhost:9090/realms/eventflowx
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/eventflowx/protocol/openid-connect/certs
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
 
   wallet-service:
@@ -95,6 +97,8 @@ services:
       WALLET_DB_URL: ${WALLET_DB_URL}
       WALLET_DB_USERNAME: ${WALLET_DB_USERNAME}
       WALLET_DB_PASSWORD: ${WALLET_DB_PASSWORD}
+      KEYCLOAK_ISSUER_URI: http://localhost:9090/realms/eventflowx
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/eventflowx/protocol/openid-connect/certs
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
 
   api-gateway:
@@ -132,6 +136,8 @@ services:
       zipkin:
         condition: service_started
     environment:
+      KEYCLOAK_ISSUER_URI: http://localhost:9090/realms/eventflowx
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/eventflowx/protocol/openid-connect/certs
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
 
   ui-app:

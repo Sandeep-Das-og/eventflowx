@@ -8,6 +8,9 @@ spring:
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:9090/realms/eventflowx/protocol/openid-connect/certs}
   cloud:
     gateway:
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 10s
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -21,6 +24,12 @@ spring:
               - OPTIONS
             allowedHeaders:
               - "*"
+            allowCredentials: true
+      default-filters:
+        - name: SecureHeaders
+        - name: RequestSize
+          args:
+            maxSize: 5MB
       routes:
         - id: booking-service
           uri: ${BOOKING_SERVICE_URL:http://booking-service:8080}
@@ -135,6 +144,12 @@ management:
   zipkin:
     tracing:
       endpoint: ${ZIPKIN_ENDPOINT:http://zipkin:9411/api/v2/spans}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
 
 resilience4j:
   circuitbreaker:

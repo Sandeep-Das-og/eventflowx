@@ -46,6 +46,7 @@ class WalletServiceIntegrationTest {
         registry.add("spring.rabbitmq.host", rabbitmq::getHost);
         registry.add("spring.rabbitmq.port", rabbitmq::getAmqpPort);
         registry.add("spring.profiles.active", () -> "dev");
+        registry.add("eventflowx.security.enabled", () -> "false");
     }
 
     @Test

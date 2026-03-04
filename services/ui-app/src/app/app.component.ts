@@ -7,6 +7,14 @@ import { keycloak } from './auth/keycloak';
 
 type GatewayCode = 'RAZORPAY' | 'STRIPE' | 'PAYPAL';
 type PaymentMethodType = 'UPI' | 'CREDIT_CARD' | 'DEBIT_CARD';
+type ModuleKey = 'overview' | 'events' | 'bookings' | 'admin-create' | 'admin-analytics' | 'payments';
+
+interface NavItem {
+  key: ModuleKey;
+  label: string;
+  icon: string;
+  role: 'all' | 'admin' | 'user';
+}
 
 @Component({
   selector: 'app-root',
@@ -16,30 +24,53 @@ type PaymentMethodType = 'UPI' | 'CREDIT_CARD' | 'DEBIT_CARD';
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
-  loading = false;
   message = '';
   error = '';
+  loadingEvents = false;
+  loadingAnalytics = false;
+  submittingEvent = false;
+  submittingBooking = false;
+  submittingPayment = false;
 
+  currentModule: ModuleKey = 'overview';
   events: EventItem[] = [];
   selectedEvent: EventItem | null = null;
   selectedAnalytics: EventAnalytics | null = null;
-
   bookingId = '';
-  paymentAmount = 0;
   paymentStatus = '';
-  showPaymentPanel = false;
+  showPaymentPage = false;
+
   selectedGateway: GatewayCode = 'RAZORPAY';
   selectedPaymentMethod: PaymentMethodType = 'UPI';
+  readonly navItems: NavItem[] = [
+    { key: 'overview', label: 'Overview', icon: 'OV', role: 'all' },
+    { key: 'events', label: 'Events', icon: 'EV', role: 'all' },
+    { key: 'bookings', label: 'Bookings', icon: 'BK', role: 'user' },
+    { key: 'admin-create', label: 'Create Event', icon: 'CE', role: 'admin' },
+    { key: 'admin-analytics', label: 'Event Analytics', icon: 'AN', role: 'admin' }
+  ];
+
+  readonly moduleNames: Record<ModuleKey, string> = {
+    overview: 'Overview',
+    events: 'Events',
+    bookings: 'Bookings',
+    'admin-create': 'Create Event',
+    'admin-analytics': 'Event Analytics',
+    payments: 'Payment'
+  };
+
   readonly paymentGateways: { code: GatewayCode; name: string; subtitle: string }[] = [
     { code: 'RAZORPAY', name: 'Razorpay', subtitle: 'UPI, cards, net banking, wallets' },
-    { code: 'STRIPE', name: 'Stripe', subtitle: 'Cards, wallets and global methods' },
-    { code: 'PAYPAL', name: 'PayPal', subtitle: 'PayPal, cards, Venmo (region based)' }
+    { code: 'STRIPE', name: 'Stripe', subtitle: 'Cards and global wallets' },
+    { code: 'PAYPAL', name: 'PayPal', subtitle: 'Cards and PayPal balance' }
   ];
+
   readonly paymentMethods: { code: PaymentMethodType; label: string }[] = [
     { code: 'UPI', label: 'UPI' },
     { code: 'CREDIT_CARD', label: 'Credit Card' },
     { code: 'DEBIT_CARD', label: 'Debit Card' }
   ];
+
   readonly gatewayCapabilities: Record<GatewayCode, PaymentMethodType[]> = {
     RAZORPAY: ['UPI', 'CREDIT_CARD', 'DEBIT_CARD'],
     STRIPE: ['CREDIT_CARD', 'DEBIT_CARD'],
@@ -47,8 +78,8 @@ export class AppComponent implements OnInit {
   };
 
   readonly eventForm = this.fb.group({
-    name: ['', [Validators.required]],
-    city: ['', [Validators.required]],
+    name: ['', [Validators.required, Validators.minLength(3)]],
+    city: ['', [Validators.required, Validators.minLength(2)]],
     price: [50, [Validators.required, Validators.min(1)]]
   });
 
@@ -78,60 +109,81 @@ export class AppComponent implements OnInit {
   }
 
   get isAdmin(): boolean {
-    const parsed = keycloak.tokenParsed as { realm_access?: { roles?: string[] }; preferred_username?: string } | undefined;
+    const parsed = keycloak.tokenParsed as { realm_access?: { roles?: string[] } } | undefined;
     const roles = parsed?.realm_access?.roles ?? [];
-    return roles.includes('admin') || parsed?.preferred_username === 'eventflowx-admin';
+    return roles.includes('admin');
+  }
+
+  get visibleNavItems(): NavItem[] {
+    return this.navItems.filter((item) => item.role === 'all' || (item.role === 'admin' ? this.isAdmin : !this.isAdmin));
+  }
+
+  get breadcrumb(): string {
+    return `Console / ${this.isAdmin ? 'Admin' : 'User'} / ${this.moduleNames[this.currentModule]}`;
+  }
+
+  selectModule(key: ModuleKey): void {
+    if (key === 'payments' && !this.showPaymentPage) {
+      return;
+    }
+    this.currentModule = key;
+    this.clearNotices();
+    if ((key === 'events' || key === 'admin-analytics' || key === 'overview') && this.events.length === 0) {
+      this.loadEvents();
+    }
   }
 
   loadEvents(): void {
-    this.loading = true;
-    this.resetNotices();
+    this.loadingEvents = true;
+    this.clearNotices();
     this.api.listEvents().subscribe({
       next: (res) => {
         this.events = res;
-        this.loading = false;
+        this.loadingEvents = false;
       },
       error: (err) => {
-        this.error = err?.error?.message ?? 'Failed to load events';
-        this.loading = false;
+        this.error = err?.error?.message ?? 'Failed to load events.';
+        this.loadingEvents = false;
       }
     });
   }
 
   createEvent(): void {
     if (this.eventForm.invalid) {
+      this.error = 'Please fix validation errors in the event form.';
       return;
     }
 
-    this.loading = true;
-    this.resetNotices();
-
+    this.submittingEvent = true;
+    this.clearNotices();
     const payload = this.eventForm.getRawValue() as { name: string; city: string; price: number };
+
     this.api.createEvent(payload).subscribe({
       next: () => {
-        this.message = 'Event created successfully';
+        this.message = 'Event created successfully.';
         this.eventForm.reset({ name: '', city: '', price: 50 });
+        this.submittingEvent = false;
         this.loadEvents();
       },
       error: (err) => {
-        this.error = err?.error?.message ?? 'Failed to create event';
-        this.loading = false;
+        this.error = err?.error?.message ?? 'Failed to create event.';
+        this.submittingEvent = false;
       }
     });
   }
 
   viewAnalytics(event: EventItem): void {
-    this.loading = true;
-    this.resetNotices();
-
+    this.loadingAnalytics = true;
+    this.clearNotices();
+    this.selectedAnalytics = null;
     this.api.eventAnalytics(event.id).subscribe({
       next: (res) => {
         this.selectedAnalytics = res;
-        this.loading = false;
+        this.loadingAnalytics = false;
       },
       error: (err) => {
-        this.error = err?.error?.message ?? 'Failed to load analytics';
-        this.loading = false;
+        this.error = err?.error?.message ?? 'Failed to load event analytics.';
+        this.loadingAnalytics = false;
       }
     });
   }
@@ -143,71 +195,67 @@ export class AppComponent implements OnInit {
       eventName: event.name,
       userId: this.username
     });
-    this.paymentAmount = event.price;
     this.paymentForm.patchValue({ amount: event.price });
+    this.currentModule = 'bookings';
+    this.clearNotices();
   }
 
   submitBooking(): void {
     if (this.bookingForm.invalid) {
+      this.error = 'Booking form is incomplete.';
       return;
     }
 
-    this.loading = true;
-    this.resetNotices();
-
+    this.submittingBooking = true;
+    this.clearNotices();
     const payload = this.bookingForm.getRawValue() as { eventId: string; eventName: string; userId: string };
     this.api.createBooking(payload).subscribe({
       next: (res) => {
         this.bookingId = res.bookingId;
-        this.showPaymentPanel = true;
-        this.message = `Booking created (${res.bookingId}). Complete payment below.`;
-        this.loading = false;
+        this.showPaymentPage = true;
+        this.message = `Booking created (${res.bookingId}). Continue on the Payment page.`;
+        this.submittingBooking = false;
+        this.currentModule = 'payments';
       },
       error: (err) => {
-        this.error = err?.error?.message ?? 'Booking failed';
-        this.loading = false;
+        this.error = err?.error?.message ?? 'Booking failed.';
+        this.submittingBooking = false;
       }
     });
   }
 
-  submitPayment(gatewayCode?: GatewayCode): void {
+  submitPayment(): void {
     if (this.paymentForm.invalid || !this.bookingId) {
+      this.error = 'Payment is not ready. Create a booking first.';
       return;
     }
 
-    this.loading = true;
-    this.resetNotices();
-
+    this.submittingPayment = true;
+    this.clearNotices();
     const payment = this.paymentForm.getRawValue() as { amount: number };
-    const provider = gatewayCode ?? this.selectedGateway;
-    if (!this.isMethodSupported(provider, this.selectedPaymentMethod)) {
-      this.error = `${this.selectedPaymentMethod} is not supported on ${provider}`;
-      this.loading = false;
+    if (!this.isMethodSupported(this.selectedGateway, this.selectedPaymentMethod)) {
+      this.error = `${this.selectedPaymentMethod} is not supported on ${this.selectedGateway}.`;
+      this.submittingPayment = false;
       return;
     }
 
     this.api.chargePayment({
       bookingId: this.bookingId,
       userId: this.username,
-      paymentGateway: provider,
+      paymentGateway: this.selectedGateway,
       paymentMethodType: this.selectedPaymentMethod,
       amount: Number(payment.amount)
     }).subscribe({
       next: (res) => {
-        this.selectedGateway = provider;
-        this.paymentStatus = `${res.status} via ${res.paymentGateway} (${res.paymentMethodType}) - charged ${res.chargedAmount}`;
-        this.message = `Payment successful for booking ${res.bookingId}`;
-        this.loading = false;
+        this.paymentStatus = `${res.status} via ${res.paymentGateway} (${res.paymentMethodType})`;
+        this.message = `Payment completed for booking ${res.bookingId}.`;
+        this.submittingPayment = false;
       },
       error: (err) => {
-        this.error = err?.error?.message ?? 'Payment failed';
-        this.loading = false;
+        this.error = err?.error?.message ?? 'Payment failed.';
+        this.submittingPayment = false;
       }
     });
-  }
-
-  logout(): void {
-    keycloak.logout({ redirectUri: 'http://localhost:6767' });
   }
 
   selectGateway(gateway: GatewayCode): void {
@@ -225,7 +273,21 @@ export class AppComponent implements OnInit {
     return this.gatewayCapabilities[gateway].includes(method);
   }
 
-  private resetNotices(): void {
+  retryCurrentModule(): void {
+    if (this.currentModule === 'events' || this.currentModule === 'overview') {
+      this.loadEvents();
+    } else if (this.currentModule === 'admin-analytics') {
+      if (this.selectedEvent) {
+        this.viewAnalytics(this.selectedEvent);
+      }
+    }
+  }
+
+  logout(): void {
+    keycloak.logout({ redirectUri: 'http://localhost:6767' });
+  }
+
+  private clearNotices(): void {
     this.message = '';
     this.error = '';
   }

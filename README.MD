@@ -6,7 +6,10 @@ A Spring Boot multi-module microservices project demonstrating :
 - RabbitMQ async messaging
 - Idempotent consumer processing in wallet service
 - API Gateway with Circuit Breaker and Retry/Backoff
+- Gateway hardening (secure headers, request size, timeouts)
 - IAM/IdP with Keycloak and JWT validation at API Gateway
+- OpenAPI/Swagger for gateway and services
+- Flyway migration-based schema management (booking/wallet)
 - Distributed tracing with Zipkin
 - Local (H2) and Dev/Prod (PostgreSQL) profile strategy
 
@@ -176,8 +179,17 @@ TOKEN=$(curl -s -X POST "http://localhost:9090/realms/eventflowx/protocol/openid
 Gateway authorization mapping:
 - `GET /events/**` -> `event.read` or `admin`
 - `POST /bookings/**` -> `booking.write` or `admin`
-- `GET /wallets/**` -> `wallet.read` or `admin`
-- `POST /wallets/*/credit` -> `wallet.credit` or `admin`
+- `POST /payments/**` -> `wallet.credit` or `admin`
+- `GET /wallets/**` -> `admin`
+- `POST /wallets/*/credit` -> `admin`
+- `POST /admin/events/**` and `GET /admin/events/**` -> `admin`
+
+## OpenAPI / Swagger
+
+- API Gateway docs: `http://localhost:8081/swagger-ui.html`
+- Booking service docs: `http://localhost:8080/swagger-ui.html` (local run)
+- Wallet service docs: `http://localhost:8084/swagger-ui.html` (local run)
+- Event service docs: `http://localhost:8082/swagger-ui.html` (local run)
 
 ## Quick API Smoke Test
 
@@ -187,19 +199,16 @@ Create a booking through gateway:
 curl -X POST http://localhost:8081/bookings \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"customerName":"alice","eventName":"concert"}'
+  -d '{"userId":"eventflowx-user","eventId":"event-001","eventName":"concert-night"}'
 ```
 
-Check wallet balance:
+Charge payment (post-booking):
 
 ```bash
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8081/wallets/alice
-```
-
-Credit wallet:
-
-```bash
-curl -X POST -H "Authorization: Bearer $TOKEN" "http://localhost:8081/wallets/alice/credit?amount=100"
+curl -X POST http://localhost:8081/payments/charge \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"bookingId":"<booking-id>","userId":"eventflowx-user","paymentGateway":"RAZORPAY","paymentMethodType":"UPI","amount":99}'
 ```
 
 List events:

@@ -1,6 +1,7 @@
 package com.eventflowx.booking.web;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -42,11 +43,13 @@ class BookingControllerIntegrationTest {
         registry.add("spring.rabbitmq.host", rabbitmq::getHost);
         registry.add("spring.rabbitmq.port", rabbitmq::getAmqpPort);
         registry.add("spring.profiles.active", () -> "dev");
+        registry.add("eventflowx.security.enabled", () -> "false");
     }
 
     @Test
     void createBooking_returnsCreated() throws Exception {
         mockMvc.perform(post("/bookings")
+                        .with(user("eventflowx-user").authorities(() -> "ROLE_booking.write"))
                         .contentType("application/json")
                         .content("{\"userId\":\"alice\",\"eventId\":\"event-1\",\"eventName\":\"concert\"}"))
                 .andExpect(status().isCreated())
