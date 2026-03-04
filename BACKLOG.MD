@@ -3,6 +3,13 @@
 This file tracks only pending work.  
 Completed items are removed from this list.
 
+## 0) SonarQube Integration
+
+- Configure GitHub repository secrets and enable quality gate as required PR check:
+  - `SONAR_TOKEN`
+  - `SONAR_HOST_URL`
+  - `SONAR_PROJECT_KEY`
+
 ## 1) Complete RBAC
 
 - Finalize Keycloak role/group lifecycle and environment promotion strategy (dev/stage/prod).
