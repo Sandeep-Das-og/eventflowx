@@ -62,10 +62,6 @@ jobs:
             echo "enabled=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Run tests for Sonar context
-        if: ${{ steps.sonar_ready.outputs.enabled == 'true' }}
-        run: ./gradlew test
-
       - name: SonarQube Scan
         if: ${{ steps.sonar_ready.outputs.enabled == 'true' }}
         uses: SonarSource/sonarqube-scan-action@v5
