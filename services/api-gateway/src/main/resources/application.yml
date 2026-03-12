@@ -34,6 +34,124 @@ spring:
           args:
             maxSize: 5MB
       routes:
+        - id: booking-service-v1
+          uri: ${BOOKING_SERVICE_URL:http://booking-service:8080}
+          predicates:
+            - Path=/api/v1/bookings/**
+          metadata:
+            connect-timeout: 3000
+            response-timeout: 7000
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: bookingCircuitBreaker
+                fallbackUri: forward:/fallback/bookings
+            - name: Retry
+              args:
+                retries: 3
+                methods:
+                  - GET
+                  - POST
+                backoff:
+                  firstBackoff: 200ms
+                  maxBackoff: 2s
+                  factor: 2
+                  basedOnPreviousValue: true
+        - id: wallet-service-v1
+          uri: ${WALLET_SERVICE_URL:http://wallet-service:8084}
+          predicates:
+            - Path=/api/v1/wallets/**
+          metadata:
+            connect-timeout: 3000
+            response-timeout: 7000
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: walletCircuitBreaker
+                fallbackUri: forward:/fallback/wallets
+            - name: Retry
+              args:
+                retries: 3
+                methods:
+                  - GET
+                  - POST
+                backoff:
+                  firstBackoff: 200ms
+                  maxBackoff: 2s
+                  factor: 2
+                  basedOnPreviousValue: true
+        - id: payment-service-v1
+          uri: ${WALLET_SERVICE_URL:http://wallet-service:8084}
+          predicates:
+            - Path=/api/v1/payments/**
+          metadata:
+            connect-timeout: 3000
+            response-timeout: 8000
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: paymentCircuitBreaker
+                fallbackUri: forward:/fallback/wallets
+            - name: Retry
+              args:
+                retries: 3
+                methods:
+                  - POST
+                backoff:
+                  firstBackoff: 200ms
+                  maxBackoff: 2s
+                  factor: 2
+                  basedOnPreviousValue: true
+        - id: event-service-v1
+          uri: ${EVENT_SERVICE_URL:http://event-service:8082}
+          predicates:
+            - Path=/api/v1/events/**
+          metadata:
+            connect-timeout: 3000
+            response-timeout: 7000
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: eventCircuitBreaker
+                fallbackUri: forward:/fallback/events
+            - name: Retry
+              args:
+                retries: 3
+                methods:
+                  - GET
+                backoff:
+                  firstBackoff: 200ms
+                  maxBackoff: 2s
+                  factor: 2
+                  basedOnPreviousValue: true
+        - id: event-admin-service-v1
+          uri: ${EVENT_SERVICE_URL:http://event-service:8082}
+          predicates:
+            - Path=/api/v1/admin/events/**
+          metadata:
+            connect-timeout: 3000
+            response-timeout: 7000
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: eventAdminCircuitBreaker
+                fallbackUri: forward:/fallback/events
+            - name: Retry
+              args:
+                retries: 2
+                methods:
+                  - GET
+                  - POST
+                backoff:
+                  firstBackoff: 200ms
+                  maxBackoff: 1s
+                  factor: 2
+                  basedOnPreviousValue: true
         - id: booking-service
           uri: ${BOOKING_SERVICE_URL:http://booking-service:8080}
           predicates:

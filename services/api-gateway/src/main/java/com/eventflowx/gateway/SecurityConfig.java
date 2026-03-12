@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
@@ -46,6 +45,13 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/payments/**").hasAnyAuthority("ROLE_wallet.credit", "ROLE_admin")
                         .pathMatchers(HttpMethod.GET, "/wallets/**").hasAuthority("ROLE_admin")
                         .pathMatchers(HttpMethod.POST, "/wallets/*/credit").hasAuthority("ROLE_admin")
+                        .pathMatchers(HttpMethod.POST, "/api/v1/admin/events/**").hasAuthority("ROLE_admin")
+                        .pathMatchers(HttpMethod.GET, "/api/v1/admin/events/**").hasAuthority("ROLE_admin")
+                        .pathMatchers(HttpMethod.GET, "/api/v1/events/**").hasAnyAuthority("ROLE_event.read", "ROLE_admin")
+                        .pathMatchers(HttpMethod.POST, "/api/v1/bookings/**").hasAnyAuthority("ROLE_booking.write", "ROLE_admin")
+                        .pathMatchers(HttpMethod.POST, "/api/v1/payments/**").hasAnyAuthority("ROLE_wallet.credit", "ROLE_admin")
+                        .pathMatchers(HttpMethod.GET, "/api/v1/wallets/**").hasAuthority("ROLE_admin")
+                        .pathMatchers(HttpMethod.POST, "/api/v1/wallets/*/credit").hasAuthority("ROLE_admin")
                         .anyExchange().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((exchange, e) -> writeError(exchange, HttpStatus.UNAUTHORIZED, "Unauthorized", e.getMessage()))
@@ -87,7 +93,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource(
             @Value("${eventflowx.gateway.cors.allowed-origins:http://localhost:6767}") String allowedOrigins) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(allowedOrigins.split(",")).stream().map(String::trim).collect(Collectors.toList()));
+        configuration.setAllowedOrigins(List.of(allowedOrigins.split(",")).stream()
+                .map(String::trim)
+                .toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-Id", "X-Correlation-Id"));
         configuration.setExposedHeaders(List.of("Authorization", "X-Request-Id", "X-Correlation-Id"));
