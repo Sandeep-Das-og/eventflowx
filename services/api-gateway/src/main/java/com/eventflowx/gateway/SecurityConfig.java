@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -44,6 +45,13 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/payments/**").hasAnyAuthority("ROLE_wallet.credit", "ROLE_admin")
                         .pathMatchers(HttpMethod.GET, "/wallets/**").hasAuthority("ROLE_admin")
                         .pathMatchers(HttpMethod.POST, "/wallets/*/credit").hasAuthority("ROLE_admin")
+                        .pathMatchers(HttpMethod.POST, "/api/v1/admin/events/**").hasAuthority("ROLE_admin")
+                        .pathMatchers(HttpMethod.GET, "/api/v1/admin/events/**").hasAuthority("ROLE_admin")
+                        .pathMatchers(HttpMethod.GET, "/api/v1/events/**").hasAnyAuthority("ROLE_event.read", "ROLE_admin")
+                        .pathMatchers(HttpMethod.POST, "/api/v1/bookings/**").hasAnyAuthority("ROLE_booking.write", "ROLE_admin")
+                        .pathMatchers(HttpMethod.POST, "/api/v1/payments/**").hasAnyAuthority("ROLE_wallet.credit", "ROLE_admin")
+                        .pathMatchers(HttpMethod.GET, "/api/v1/wallets/**").hasAuthority("ROLE_admin")
+                        .pathMatchers(HttpMethod.POST, "/api/v1/wallets/*/credit").hasAuthority("ROLE_admin")
                         .anyExchange().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((exchange, e) -> writeError(exchange, HttpStatus.UNAUTHORIZED, "Unauthorized", e.getMessage()))
@@ -82,12 +90,16 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(
+            @Value("${eventflowx.gateway.cors.allowed-origins:http://localhost:6767}") String allowedOrigins) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:6767"));
+        configuration.setAllowedOrigins(List.of(allowedOrigins.split(",")).stream()
+                .map(String::trim)
+                .toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-Id", "X-Correlation-Id"));
+        configuration.setExposedHeaders(List.of("Authorization", "X-Request-Id", "X-Correlation-Id"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

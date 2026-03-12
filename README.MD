@@ -191,12 +191,21 @@ Gateway authorization mapping:
 - Wallet service docs: `http://localhost:8084/swagger-ui.html` (local run)
 - Event service docs: `http://localhost:8082/swagger-ui.html` (local run)
 
+## API Versioning
+
+- All external gateway routes are versioned under `/api/v1`.
+- Unversioned routes remain temporarily for backward compatibility and will be removed after a deprecation window.
+- Breaking changes require a new major version path (`/api/v2`).
+- Non-breaking additions can ship within the same version.
+
+See `docs/14-api-versioning.md` for the full contract policy.
+
 ## Quick API Smoke Test
 
 Create a booking through gateway:
 
 ```bash
-curl -X POST http://localhost:8081/bookings \
+curl -X POST http://localhost:8081/api/v1/bookings \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"userId":"eventflowx-user","eventId":"event-001","eventName":"concert-night"}'
@@ -205,7 +214,7 @@ curl -X POST http://localhost:8081/bookings \
 Charge payment (post-booking):
 
 ```bash
-curl -X POST http://localhost:8081/payments/charge \
+curl -X POST http://localhost:8081/api/v1/payments/charge \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"bookingId":"<booking-id>","userId":"eventflowx-user","paymentGateway":"RAZORPAY","paymentMethodType":"UPI","amount":99}'
@@ -214,7 +223,7 @@ curl -X POST http://localhost:8081/payments/charge \
 List events:
 
 ```bash
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8081/events
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8081/api/v1/events
 ```
 
 ## Testing
