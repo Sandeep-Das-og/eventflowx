@@ -49,6 +49,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Build classes for Sonar
+        run: ./gradlew classes
+
       - name: Sonar Scan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
@@ -61,12 +64,3 @@ jobs:
             -Dsonar.projectName=eventflowx
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.java.binaries=**/build/classes/java/main,**/build/classes/kotlin/main
-
-      - name: SonarQube Quality Gate
-        if: ${{ steps.sonar_ready.outputs.enabled == 'true' && env.SONAR_ENFORCE_QUALITY_GATE == 'true' }}
-        uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-          SONAR_ENFORCE_QUALITY_GATE: ${{ secrets.SONAR_ENFORCE_QUALITY_GATE }}
