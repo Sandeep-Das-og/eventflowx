@@ -49,6 +49,11 @@ A Spring Boot multi-module microservices project demonstrating :
 - Docker Desktop (required for compose and Testcontainers integration tests)
 - Optional: Postman/Newman, Robot Framework
 
+## CI Maintenance
+
+- GitHub Actions are pinned to full commit SHAs for security and reproducibility.
+- Update pinned SHAs periodically (e.g., monthly) or when you need a new action release.
+
 ## Build
 
 ```bash
