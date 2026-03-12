@@ -1,4 +1,4 @@
-name: Build, Test & Sonar
+name: PR Build
 
 on:
   pull_request:
@@ -49,7 +49,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Determine Sonar readiness
+      - name: Check Sonar readiness
         id: sonar_ready
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
