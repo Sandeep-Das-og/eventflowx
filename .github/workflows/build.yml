@@ -53,7 +53,7 @@ jobs:
         run: ./gradlew classes
 
       - name: Sonar Scan
-        uses: SonarSource/sonarqube-scan-actiona6d90ebcb0e6a6b1d87e37ba693fe453195ae25@v5
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
