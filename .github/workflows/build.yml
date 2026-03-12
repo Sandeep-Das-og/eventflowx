@@ -63,4 +63,4 @@ jobs:
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.projectName=eventflowx
             -Dsonar.sourceEncoding=UTF-8
-            -Dsonar.java.binaries=**/build/classes/java/main,**/build/classes/kotlin/main
+            -Dsonar.java.binaries=**/build/classes/java/main
