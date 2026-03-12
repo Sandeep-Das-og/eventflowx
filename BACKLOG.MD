@@ -1,4 +1,4 @@
-# EventFlowX Backlog 
+# EventFlowX Backlog
 
 This file tracks only pending work.  
 Completed items are removed from this list.
