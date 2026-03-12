@@ -3,13 +3,16 @@ name: Build, Test & Sonar
 on:
   push:
     branches:
+      - main
       - master
   pull_request:
     branches:
+      - main
       - master
 
 jobs:
-  build:
+  build_and_test:
+    name: Build & Test (Gradle)
     runs-on: ubuntu-latest
 
     steps:
@@ -30,9 +33,10 @@ jobs:
         run: ./gradlew clean build
 
   sonar:
+    name: Sonar Scan
     runs-on: ubuntu-latest
-    needs: build
-    if: ${{ github.event_name == 'pull_request' && secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != '' && secrets.SONAR_PROJECT_KEY != '' }}
+    needs: build_and_test
+    if: ${{ github.event_name == 'pull_request' }}
 
     steps:
       - name: Checkout repository
@@ -50,10 +54,26 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Check Sonar secrets
+        id: sonar_ready
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+        run: |
+          if [ -n "$SONAR_TOKEN" ] && [ -n "$SONAR_HOST_URL" ] && [ -n "$SONAR_PROJECT_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping Sonar: required secrets are missing."
+          fi
+
       - name: Run tests for Sonar context
+        if: ${{ steps.sonar_ready.outputs.enabled == 'true' }}
         run: ./gradlew test
 
       - name: SonarQube Scan
+        if: ${{ steps.sonar_ready.outputs.enabled == 'true' }}
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -65,7 +85,7 @@ jobs:
             -Dsonar.sourceEncoding=UTF-8
 
       - name: SonarQube Quality Gate
-        if: ${{ secrets.SONAR_ENFORCE_QUALITY_GATE == 'true' }}
+        if: ${{ steps.sonar_ready.outputs.enabled == 'true' && secrets.SONAR_ENFORCE_QUALITY_GATE == 'true' }}
         uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
         timeout-minutes: 5
         env:
