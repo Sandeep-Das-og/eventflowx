@@ -63,6 +63,10 @@ jobs:
             echo "enabled=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Build classes for Sonar
+        if: ${{ steps.sonar_ready.outputs.enabled == 'true' }}
+        run: ./gradlew classes
+
       - name: SonarQube Scan
         if: ${{ steps.sonar_ready.outputs.enabled == 'true' }}
         uses: SonarSource/sonarqube-scan-action@v5
@@ -75,6 +79,7 @@ jobs:
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.projectName=eventflowx
             -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.java.binaries=**/build/classes/java/main,**/build/classes/kotlin/main
 
       - name: SonarQube Quality Gate
         if: ${{ steps.sonar_ready.outputs.enabled == 'true' && env.SONAR_ENFORCE_QUALITY_GATE == 'true' }}
