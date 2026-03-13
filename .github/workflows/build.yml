@@ -55,6 +55,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
+          path: .
 
       - name: Sonar Scan
         uses: SonarSource/sonarqube-scan-action@1a6d90ebcb0e6a6b1d87e37ba693fe453195ae25
@@ -82,6 +83,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
+          path: .
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
