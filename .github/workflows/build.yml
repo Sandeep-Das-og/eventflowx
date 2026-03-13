@@ -1,5 +1,8 @@
 name: PR Build
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   pull_request:
     branches:
@@ -70,7 +73,33 @@ jobs:
           python-version: '3.11'
 
       - name: Create .env for docker compose
-        run: cp .env.example .env
+        run: |
+          if [ -f .env.example ]; then
+            cp .env.example .env
+          else
+            cat > .env <<'ENVEOF'
+            # Copy to .env before running docker compose.
+            # These defaults are aligned with docker/postgres/init.sql for local development.
+            # If you change DB passwords here, also update docker/postgres/init.sql.
+
+            POSTGRES_USER=postgres
+            POSTGRES_PASSWORD=postgres
+
+            KC_BOOTSTRAP_ADMIN_USERNAME=admin
+            KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+
+            KC_DB_USERNAME=keycloak_user
+            KC_DB_PASSWORD=keycloak_password
+
+            BOOKING_DB_URL=jdbc:postgresql://postgres:5432/booking_db
+            BOOKING_DB_USERNAME=booking_user
+            BOOKING_DB_PASSWORD=booking_password
+
+            WALLET_DB_URL=jdbc:postgresql://postgres:5432/wallet_db
+            WALLET_DB_USERNAME=wallet_user
+            WALLET_DB_PASSWORD=wallet_password
+            ENVEOF
+          fi
 
       - name: Start stack
         run: docker compose up -d --build
