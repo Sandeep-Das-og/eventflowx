@@ -51,4 +51,8 @@ subprojects {
         include '**/*IntegrationTest*'
         shouldRunAfter test
     }
+
+    tasks.named('check') {
+        dependsOn tasks.named('integrationTest')
+    }
 }
