@@ -85,6 +85,12 @@ jobs:
           name: build-artifacts
           path: .
 
+      - name: Place build artifacts into workspace
+        run: |
+          if [ -d build-artifacts ]; then
+            cp -R build-artifacts/. .
+          fi
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
