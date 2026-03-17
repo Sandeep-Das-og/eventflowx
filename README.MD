@@ -100,6 +100,8 @@ Services:
 - Keycloak (IdP): `http://localhost:9090`
 - RabbitMQ UI: `http://localhost:15672` (guest/guest)
 - Zipkin UI: `http://localhost:9411`
+- Prometheus: `http://localhost:9092`
+- Grafana: `http://localhost:3000` (admin/admin)
 
 Note: booking, wallet, and event services are internal-only in Docker Compose and intentionally not exposed to host ports.
 
