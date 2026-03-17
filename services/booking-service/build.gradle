@@ -17,6 +17,7 @@ dependencies {
     implementation 'org.springframework.retry:spring-retry'
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
     runtimeOnly 'io.zipkin.reporter2:zipkin-reporter-brave'
 
     implementation 'org.projectlombok:lombok:1.18.30'
