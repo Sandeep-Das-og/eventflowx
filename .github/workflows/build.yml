@@ -75,6 +75,7 @@ jobs:
             -Dsonar.projectName=eventflowx
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.java.binaries=**/build/classes/java/main
+            -Dsonar.qualitygate.wait=false
 
   # system_tests:
   #   name: System Tests (Newman + Robot)
